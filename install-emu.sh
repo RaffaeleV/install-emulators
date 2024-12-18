@@ -160,7 +160,7 @@ make -j $(nproc) > /dev/null 2>&1 || error_exit $LINENO
 make install > /dev/null 2>&1 || error_exit $LINENO
 
 rm -rf ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
-rd ~/vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
+rm ~/vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 11: Remove boot logo, bootscreen and initial messages
 echo "Removing boot logo and boot messages..."
