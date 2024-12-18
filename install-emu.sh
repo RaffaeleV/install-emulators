@@ -29,8 +29,8 @@ echo
 
 # Step 1: Update system
 echo "Updating system..."
-sudo apt update -y
-sudo apt upgrade -y
+sudo apt update -y > /dev/null 2>&1 || error_exit $LINENO
+sudo apt upgrade -y > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 2: Create the menu.sh file
 cat << 'EOF' > ~/menu.sh
@@ -77,39 +77,40 @@ done
 EOF
 
 # Step 3: Make the script executable
-chmod +x ~/menu.sh
+chmod +x ~/menu.sh > /dev/null 2>&1 || error_exit $LINENO
 
-# Step 4: Enable Console Autologin
-echo "Enabling Console Autologin..."
-
-sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
-echo -e "[Service]\nExecStart=\nExecStart=-/sbin/agetty --autologin " & ${USER_N} & " --noclear %I \$TERM" | sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null
-
-sudo systemctl daemon-reload
-sudo systemctl restart getty@tty1
+# Step 4: Enable autologin for pi user
+echo "Enabling autologin for user ${USER_N}..."
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d || error_exit $LINENO
+cat << EOF | sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null 2>&1
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin ${USER_N} --noclear %I \$TERM
+EOF
+sudo systemctl daemon-reload > /dev/null 2>&1 || error_exit $LINENO
+sudo systemctl restart getty@tty1 > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 5: Append menu.sh to .bashrc for autostart
-echo "~/menu.sh" >> ~/.bashrc
-
-# Step 6: Disable logo and bootscreen
-echo "Modifying cmdline.txt..."
-CMDLINE_FILE="/boot/firmware/cmdline.txt"
-sudo sed -i 's/$/ logo.nologo/' "$CMDLINE_FILE"
-sudo sed -i '/^# disable_splash=1/ s/^#//' /boot/firmware/config.txt
-sudo sed -i '/^disable_splash=1/ s/.*//' /boot/firmware/config.txt
-echo "disable_splash=1" | sudo tee -a /boot/firmware/config.txt > /dev/null
+echo "~/menu.sh" >> ~/.bashrc > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 7: Install Amiberry
 echo "Downloading and installing Amiberry..."
-sudo apt install cmake libsdl2-2.0-0 libsdl2-ttf-2.0-0 libsdl2-image-2.0-0 flac mpg123 libmpeg2-4 libserialport0 libportmidi0 mesa-utils mesa-vulkan-drivers libegl-mesa0 raspi-gpio libgl1-mesa-dri libgl1-mesa-glx libgles2-mesa alsa-utils libasound2 libasound2-dev libportaudio2 libasound2-plugins alsa-oss-y
-sudo apt update
-sudo apt install pulseaudio pavucontrol pulseaudio-utils -y
-systemctl --user enable pulseaudio
-systemctl --user start pulseaudio
-wget https://github.com/BlitterStudio/amiberry/releases/download/v${AMI_VERS}/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip
-unzip amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip -d amiberry
-sudo chmod +x amiberry/amiberry
-rm ~/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip
+sudo apt install -y \
+  cmake \
+  libsdl2-2.0-0 libsdl2-ttf-2.0-0 libsdl2-image-2.0-0 \
+  flac mpg123 libmpeg2-4 libserialport0 libportmidi0 \
+  mesa-utils mesa-vulkan-drivers \
+  libegl-mesa0 raspi-gpio libgl1-mesa-dri libgl1-mesa-glx libgles2-mesa alsa-utils \
+  libasound2 libasound2-dev libportaudio2 libasound2-plugins alsa-oss \
+  samba samba-common-bin > /dev/null 2>&1 || error_exit $LINENO
+sudo apt update -y > /dev/null 2>&1 || error_exit $LINENO
+sudo apt install pulseaudio pavucontrol pulseaudio-utils -y > /dev/null 2>&1 || error_exit $LINENO
+systemctl --user enable pulseaudio > /dev/null 2>&1 || error_exit $LINENO
+systemctl --user start pulseaudio > /dev/null 2>&1 || error_exit $LINENO
+wget https://github.com/BlitterStudio/amiberry/releases/download/v${AMI_VERS}/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip > /dev/null 2>&1 || error_exit $LINENO
+unzip amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip -d amiberry > /dev/null 2>&1 || error_exit $LINENO
+sudo chmod +x amiberry/amiberry > /dev/null 2>&1 || error_exit $LINENO
+rm ~/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip > /dev/null 2>&1 || error_exit $LINENO
 
 # Download KSs, Amiberry default configuration and Workchbench disks
 wget -q https://github.com/RaffaeleV/installAmiberry/raw/refs/heads/main/ks.zip > /dev/null 2>&1 || error_exit $LINENO
@@ -123,43 +124,43 @@ sudo mv Workbench.v1.3.3.rev.34.34.Extras.adf ~/amiberry/floppies/ > /dev/null 2
 sudo mv Workbench.v1.3.3.rev.34.34.adf ~/amiberry/floppies/ > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 8: Create necessary directories
-mkdir -p ~/C64 ~/ZXSpectrum ~/Atari
-sudo chown -R ${USER_N}:${USER_N} ~/amiberry ~/C64 ~/ZXSpectrum ~/Atari
+mkdir -p ~/C64 ~/ZXSpectrum ~/Atari > /dev/null 2>&1 || error_exit $LINENO
+sudo chown -R ${USER_N}:${USER_N} ~/amiberry ~/C64 ~/ZXSpectrum ~/Atari > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 9: Install Other Emulators (ZX Spectrum and Atari)
 echo "Installing ZX Spectrum and Atari emulators..."
-sudo apt install fuse-emulator-sdl spectrum-roms fuse-emulator-utils stella -y
+sudo apt install fuse-emulator-sdl spectrum-roms fuse-emulator-utils stella -y > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 10: Install VICE (Commodore emulators)
 echo "Installing VICE emulator..."
-sudo apt update -y
-sudo apt upgrade -y
+sudo apt update -y > /dev/null 2>&1 || error_exit $LINENO
+sudo apt upgrade -y > /dev/null 2>&1 || error_exit $LINENO
 
 sudo apt-get install -y lsb-release git dialog wget gcc g++ build-essential unzip xmlstarlet \
   python3-pyudev ca-certificates libasound2-dev libudev-dev libibus-1.0-dev libdbus-1-dev \
   fcitx-libs-dev libsndio-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
   libxkbcommon-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libgl1-mesa-dev \
   libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dev libglu1-mesa-dev libdrm-dev libgbm-dev \
-  devscripts debhelper dh-autoreconf libraspberrypi-dev libpulse-dev
+  devscripts debhelper dh-autoreconf libraspberrypi-dev libpulse-dev > /dev/null 2>&1 || error_exit $LINENO
 
 sudo apt install libmpg123-dev libpng-dev zlib1g-dev libasound2-dev libvorbis-dev libflac-dev \
  libpcap-dev automake bison flex subversion libjpeg-dev portaudio19-dev texinfo xa65 dos2unix \
- libsdl2-image-dev libsdl2-dev libsdl2-2.0-0 -y
+ libsdl2-image-dev libsdl2-dev libsdl2-2.0-0 -y > /dev/null 2>&1 || error_exit $LINENO
 
-mkdir ~/vice-src
+mkdir ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
 
-wget -O vice-${VICE_VERS}.tar.gz https://sourceforge.net/projects/vice-emu/files/releases/vice-${VICE_VERS}.tar.gz/download
-tar xvfz vice-${VICE_VERS}.tar.gz
-cd vice-${VICE_VERS}
-./autogen.sh 
+wget -O vice-${VICE_VERS}.tar.gz https://sourceforge.net/projects/vice-emu/files/releases/vice-${VICE_VERS}.tar.gz/download > /dev/null 2>&1 || error_exit $LINENO
+tar xvfz vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
+cd vice-${VICE_VERS} > /dev/null 2>&1 || error_exit $LINENO
+./autogen.sh > /dev/null 2>&1 || error_exit $LINENO
 ./configure --prefix=${HOME}/vice-${VICE_VERS} --enable-sdl2ui --without-oss --enable-ethernet \
- --disable-catweasel --without-pulse --enable-x64 --disable-pdf-docs --with-fastsid
+ --disable-catweasel --without-pulse --enable-x64 --disable-pdf-docs --with-fastsid > /dev/null 2>&1 || error_exit $LINENO
  
-make -j $(nproc)
-make install
+make -j $(nproc) > /dev/null 2>&1 || error_exit $LINENO
+make install > /dev/null 2>&1 || error_exit $LINENO
 
-rm -rf ~/vice-src
-rd ~/vice-${VICE_VERS}.tar.gz
+rm -rf ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
+rd ~/vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 11: Remove boot logo, bootscreen and initial messages
 echo "Removing boot logo and boot messages..."
@@ -199,5 +200,5 @@ EOF
 
 # Step 13: Reboot the Raspberry Pi
 echo "Rebooting the Raspberry Pi..."
-sudo reboot
+sudo reboot > /dev/null 2>&1 || error_exit $LINENO
 
