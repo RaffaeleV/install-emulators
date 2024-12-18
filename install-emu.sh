@@ -16,11 +16,14 @@ error_exit() {
 }
 trap 'error_exit $LINENO' ERR
 
+# Create necessary directories
+sudo mkdir -p /emulators /emulators/C64 /emulators/ZXSpectrum /emulators/Atari /emulators/Amiga > /dev/null 2>&1 || error_exit $LINENO
+sudo chown -R ${USER_N}:${USER_N} /emulators > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 0: Message Before Start
 echo "========================================================"
 echo "Emulators installation!"
-echo "To copy files from your Windows machine using this address: \\\\$(hostname -I | cut -d' ' -f1)\\share"
+echo "To copy files from your Windows machine using this address: \\\\$(hostname -I | cut -d' ' -f1)\\emulators"
 echo "Login credentials: Username: ${USER_N} | Password: ${USER_PWD}"
 echo "========================================================"
 read -p "Press any key to start..." -n1 -s
@@ -47,7 +50,6 @@ show_menu() {
     clear
     echo "-------------------"
     echo "Retro Emulator Menu"
-    get_ip_address
     echo "-------------------"
     echo "1 - Atari 2600"
     echo "2 - ZX Spectrum"
@@ -65,11 +67,11 @@ while true; do
     read -p "Enter your choice: " choice
 
     case $choice in
-        1) echo "Launching Atari 2600 emulator..." && cd ~/Atari && stella ;;
-        2) echo "Launching ZX Spectrum emulator..." && cd ~/ZXSpectrum && fuse-sdl --full-screen --graphic-filter tv4x --pal-tv2x ;;
-        3) echo "Launching Vic 20 emulator..." && cd ~/C64 && ~/${VICE_VERS}/bin/xvic ;;
-        4) echo "Launching Commodore 64 emulator..." && cd ~/C64 && ~/${VICE_VERS}/bin/x64 ;;
-        5) echo "Starting Amiga emulator..." && cd ~/amiberry && ~/amiberry/amiberry ;;
+        1) echo "Launching Atari 2600 emulator..." && cd /emulators/Atari && stella ;;
+        2) echo "Launching ZX Spectrum emulator..." && cd /emulators/ZXSpectrum && fuse-sdl --full-screen --graphic-filter tv4x --pal-tv2x ;;
+        3) echo "Launching Vic 20 emulator..." && cd /emulators/C64 && ~/vice/bin/xvic ;;
+        4) echo "Launching Commodore 64 emulator..." && cd /emulators/C64 && ~/vice/bin/x64 ;;
+        5) echo "Starting Amiga emulator..." && cd /emulators/Amiga && /emulators/Amiga/amiberry ;;
         6) echo "Goodbye!" && exit 0 ;;
         *) echo "Invalid choice. Please select a valid option." ;;
     esac
@@ -91,7 +93,7 @@ sudo systemctl daemon-reload > /dev/null 2>&1 || error_exit $LINENO
 sudo systemctl restart getty@tty1 > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 5: Append menu.sh to .bashrc for autostart
-echo "~/menu.sh" >> ~/.bashrc > /dev/null 2>&1 || error_exit $LINENO
+echo "~/menu.sh" >> ~/.bashrc 
 
 # Step 7: Install Amiberry
 echo "Downloading and installing Amiberry..."
@@ -108,24 +110,20 @@ sudo apt install pulseaudio pavucontrol pulseaudio-utils -y > /dev/null 2>&1 || 
 systemctl --user enable pulseaudio > /dev/null 2>&1 || error_exit $LINENO
 systemctl --user start pulseaudio > /dev/null 2>&1 || error_exit $LINENO
 wget https://github.com/BlitterStudio/amiberry/releases/download/v${AMI_VERS}/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip > /dev/null 2>&1 || error_exit $LINENO
-unzip amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip -d amiberry > /dev/null 2>&1 || error_exit $LINENO
-sudo chmod +x amiberry/amiberry > /dev/null 2>&1 || error_exit $LINENO
+unzip amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip -d /emulators/Amiga > /dev/null 2>&1 || error_exit $LINENO
+sudo chmod +x /emulators/Amiga/amiberry > /dev/null 2>&1 || error_exit $LINENO
 rm ~/amiberry-v${AMI_VERS}-debian-bookworm-aarch64-rpi${RPI_VERS}.zip > /dev/null 2>&1 || error_exit $LINENO
 
 # Download KSs, Amiberry default configuration and Workchbench disks
 wget -q https://github.com/RaffaeleV/installAmiberry/raw/refs/heads/main/ks.zip > /dev/null 2>&1 || error_exit $LINENO
-unzip -q -o ks.zip -d ~/amiberry/kickstarts > /dev/null 2>&1 || error_exit $LINENO
+unzip -q -o ks.zip -d /emulators/Amiga/kickstarts > /dev/null 2>&1 || error_exit $LINENO
 rm ks.zip > /dev/null 2>&1 || error_exit $LINENO
 wget -q https://github.com/RaffaeleV/installAmiberry/raw/refs/heads/main/default.uae > /dev/null 2>&1 || error_exit $LINENO
-sudo mv default.uae ~/amiberry/conf/default.uae > /dev/null 2>&1 || error_exit $LINENO
+sudo mv default.uae /emulators/Amiga/conf/default.uae > /dev/null 2>&1 || error_exit $LINENO
 wget -q https://github.com/RaffaeleV/installAmiberry/raw/refs/heads/main/Workbench.v1.3.3.rev.34.34.Extras.adf > /dev/null 2>&1 || error_exit $LINENO
 wget -q https://github.com/RaffaeleV/installAmiberry/raw/refs/heads/main/Workbench.v1.3.3.rev.34.34.adf > /dev/null 2>&1 || error_exit $LINENO
-sudo mv Workbench.v1.3.3.rev.34.34.Extras.adf ~/amiberry/floppies/ > /dev/null 2>&1 || error_exit $LINENO
-sudo mv Workbench.v1.3.3.rev.34.34.adf ~/amiberry/floppies/ > /dev/null 2>&1 || error_exit $LINENO
-
-# Step 8: Create necessary directories
-mkdir -p ~/C64 ~/ZXSpectrum ~/Atari > /dev/null 2>&1 || error_exit $LINENO
-sudo chown -R ${USER_N}:${USER_N} ~/amiberry ~/C64 ~/ZXSpectrum ~/Atari > /dev/null 2>&1 || error_exit $LINENO
+sudo mv Workbench.v1.3.3.rev.34.34.Extras.adf /emulators/Amiga/floppies/ > /dev/null 2>&1 || error_exit $LINENO
+sudo mv Workbench.v1.3.3.rev.34.34.adf /emulators/Amiga/floppies/ > /dev/null 2>&1 || error_exit $LINENO
 
 # Step 9: Install Other Emulators (ZX Spectrum and Atari)
 echo "Installing ZX Spectrum and Atari emulators..."
@@ -148,7 +146,7 @@ sudo apt install libmpg123-dev libpng-dev zlib1g-dev libasound2-dev libvorbis-de
  libsdl2-image-dev libsdl2-dev libsdl2-2.0-0 -y > /dev/null 2>&1 || error_exit $LINENO
 
 mkdir ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
-
+cd ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
 wget -O vice-${VICE_VERS}.tar.gz https://sourceforge.net/projects/vice-emu/files/releases/vice-${VICE_VERS}.tar.gz/download > /dev/null 2>&1 || error_exit $LINENO
 tar xvfz vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
 cd vice-${VICE_VERS} > /dev/null 2>&1 || error_exit $LINENO
@@ -158,7 +156,7 @@ cd vice-${VICE_VERS} > /dev/null 2>&1 || error_exit $LINENO
  
 make -j $(nproc) > /dev/null 2>&1 || error_exit $LINENO
 make install > /dev/null 2>&1 || error_exit $LINENO
-
+cd ~ > /dev/null 2>&1 || error_exit $LINENO
 rm -rf ~/vice-src > /dev/null 2>&1 || error_exit $LINENO
 rm ~/vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
 
@@ -185,8 +183,8 @@ cat << 'EOF' | sudo tee /etc/samba/smb.conf > /dev/null 2>&1 || error_exit $LINE
    guest account = nobody
    map to guest = bad user
 
-[share]
-   path = /home/${USER_N}
+[emulators]
+   path = /emulators
    browseable = yes
    read only = no
    guest ok = yes
