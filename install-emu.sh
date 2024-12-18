@@ -68,7 +68,7 @@ while true; do
 
     case $choice in
         1) echo "Launching Atari 2600 emulator..." && cd /emulators/Atari && stella ;;
-        2) echo "Launching ZX Spectrum emulator..." && cd /emulators/ZXSpectrum && fuse-sdl --full-screen --graphic-filter tv4x --pal-tv2x ;;
+        2) echo "Launching ZX Spectrum emulator..." && cd /emulators/ZXSpectrum && fuse-sdl --full-screen --pal-tv2x ;;
         3) echo "Launching Vic 20 emulator..." && cd /emulators/C64 && ~/vice/bin/xvic ;;
         4) echo "Launching Commodore 64 emulator..." && cd /emulators/C64 && ~/vice/bin/x64 ;;
         5) echo "Starting Amiga emulator..." && cd /emulators/Amiga && /emulators/Amiga/amiberry ;;
@@ -151,7 +151,7 @@ wget -O vice-${VICE_VERS}.tar.gz https://sourceforge.net/projects/vice-emu/files
 tar xvfz vice-${VICE_VERS}.tar.gz > /dev/null 2>&1 || error_exit $LINENO
 cd vice-${VICE_VERS} > /dev/null 2>&1 || error_exit $LINENO
 ./autogen.sh > /dev/null 2>&1 || error_exit $LINENO
-./configure --prefix=${HOME}/vice-${VICE_VERS} --enable-sdl2ui --without-oss --enable-ethernet \
+./configure --prefix=${HOME}/vice --enable-sdl2ui --without-oss --enable-ethernet \
  --disable-catweasel --without-pulse --enable-x64 --disable-pdf-docs --with-fastsid > /dev/null 2>&1 || error_exit $LINENO
  
 make -j $(nproc) > /dev/null 2>&1 || error_exit $LINENO
